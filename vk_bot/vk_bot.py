@@ -1,4 +1,5 @@
 from vk_api import VkApi
+from vk_api.longpoll import VkLongPoll, VkEventType
 import json, requests
 
 class VkBot:
@@ -15,6 +16,14 @@ class VkBot:
     def wall_post(self, message):
         post_id = self.vk.wall.post(owner_id = -self.group_id, message = message, from_group = True)['post_id']
         self.vk.wall.pin(owner_id = -self.group_id, post_id = post_id)
+    
+    def messages_loop(self):
+        session = VkApi(token='***REMOVED***')
+        longpoll = VkLongPoll(session)
+        for event in longpoll.listen():
+            if event.type == VkEventType.MESSAGE_NEW:
+                print(event.message)
+
 
 if __name__ == "__main__":
     pass

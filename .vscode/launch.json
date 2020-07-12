@@ -1,10 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Run app.py",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
             "console": "integratedTerminal"
         }
     ]
