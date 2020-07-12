@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "run.sh": true,
+        "token.txt": true
+    },
+    "git.enableCommitSigning": false
+}
