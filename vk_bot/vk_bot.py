@@ -12,10 +12,13 @@ class VkBot:
         self.group_vk = self.group_session.get_api()
 
     def get_stats(self, get_local = False, get_global = False) -> dict:
-        out = []
-        if get_local: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?countryTotal=RU').text)['countrydata'][0])
-        if get_global: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?global=stats').text)['results'][0])
-        return out
+        try:
+            out = []
+            if get_local: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?countryTotal=RU').text)['countrydata'][0])
+            if get_global: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?global=stats').text)['results'][0])
+            return out
+        except json.JSONDecodeError:
+            pass
 
     def wall_post(self, message):
         post_id = self.vk.wall.post(owner_id = -self.group_id, message = message, from_group = True)['post_id']
