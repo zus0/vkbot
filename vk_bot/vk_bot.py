@@ -14,8 +14,8 @@ class VkBot:
     def get_stats(self, get_local = False, get_global = False) -> dict:
         try:
             out = []
-            if get_local: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?countryTotal=RU').text)['countrydata'][0])
-            if get_global: out.append(json.loads(requests.get('https://api.thevirustracker.com/free-api?global=stats').text)['results'][0])
+            if get_local: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/countries/Russia').text))
+            if get_global: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/all').text))
             return out
         except json.JSONDecodeError:
             pass

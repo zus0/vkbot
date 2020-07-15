@@ -7,23 +7,25 @@ from vk_bot import VkBot
 def make_post():
     try:
         local_stats, global_stats = vk.get_stats(get_global=True, get_local=True)
-        current_date = datetime.now().strftime('%d.%m.%Y')
+        current_date = datetime.fromtimestamp(global_stats['updated']/1000).strftime('%d.%m.%Y %H:%M')
         message = (
-            f"Статистика по коронавирусу за {current_date}\n"
+            f"Статистика по коронавирусу на {current_date}\n"
             "\nВ России:\n"
-            f"Новых случаев: {local_stats['total_new_cases_today']}\n"
-            f"Смертей сегодня: {local_stats['total_new_deaths_today']}\n"
-            f"Всего случаев: {local_stats['total_cases']}\n"
-            f"Из них выздоровело: {local_stats['total_recovered']}\n"
-            f"Всего смертей: {local_stats['total_deaths']}\n"
-            f"Уровень опасности: {local_stats['total_danger_rank']}\n"
+            f"Новых случаев: {local_stats['todayCases']}\n"
+            f"Смертей сегодня: {local_stats['todayDeaths']}\n"
+            f"Сегодня выздоровело: {local_stats['todayRecovered']}"
+            f"Всего случаев: {local_stats['cases']}\n"
+            f"Из них выздоровело: {local_stats['recovered']}\n"
+            f"Всего смертей: {local_stats['deaths']}\n"
+            f"Активных случаев: {local_stats['active']}\n"
             "\nВ мире:\n"
-            f"Новых случаев: {global_stats['total_new_cases_today']}\n"
-            f"Смертей сегодня: {global_stats['total_new_deaths_today']}\n"
-            f"Всего случаев: {global_stats['total_cases']}\n"
-            f"Из них выздоровело: {global_stats['total_recovered']}\n"
-            f"Всего смертей: {global_stats['total_deaths']}\n"
-            f"Зараженных стран: {global_stats['total_affected_countries']}"
+            f"Новых случаев: {global_stats['todayCases']}\n"
+            f"Смертей сегодня: {global_stats['todayDeaths']}\n"
+            f"Всего случаев: {global_stats['cases']}\n"
+            f"Из них выздоровело: {global_stats['recovered']} ({global_stats['recovered']/(global_stats['cases']/100)}%)\n"
+            f"Всего смертей: {global_stats['deaths']}\n"
+            f"Акитвных случаев: {global_stats['active']}"
+            f"Зараженных стран: {global_stats['affectedCountries']}"
         )
         vk.wall_post(message)
     except TypeError:
@@ -39,31 +41,32 @@ def messages_hander():
     while True:
         try:
             event = vk.messages_loop()
-            print('got event!')
             msg = event.message.text.lower().strip('[club***REMOVED***|@covid_stats] ')
             peer_id = event.message.peer_id
             out_msg = ""
             if msg in messages['ru'] or msg in messages['all']:
-                stats = vk.get_stats(get_local=True)[0]
+                local_stats = vk.get_stats(get_local=True)[0]
                 out_msg += (
-                    f"\nВ России:\n"
-                    f"Новых случаев: {stats['total_new_cases_today']}\n"
-                    f"Смертей сегодня: {stats['total_new_deaths_today']}\n"
-                    f"Всего случаев: {stats['total_cases']}\n"
-                    f"Из них выздоровело: {stats['total_recovered']}\n"
-                    f"Всего смертей: {stats['total_deaths']}\n"
-                    f"Уровень опасности: {stats['total_danger_rank']}\n"
+                    "\nВ России:\n"
+                    f"Новых случаев: {local_stats['todayCases']}\n"
+                    f"Смертей сегодня: {local_stats['todayDeaths']}\n"
+                    f"Сегодня выздоровело: {local_stats['todayRecovered']}\n"
+                    f"Всего случаев: {local_stats['cases']}\n"
+                    f"Из них выздоровело: {local_stats['recovered']} ({round(local_stats['recovered']/(local_stats['cases']/100), 2)}%)\n"
+                    f"Всего смертей: {local_stats['deaths']} ({round(local_stats['deaths']/(local_stats['cases']/100), 2)}%)\n"
+                    f"Активных случаев: {local_stats['active']}\n"
                 )
             if msg in messages['world'] or msg in messages['all']:
-                stats = vk.get_stats(get_global=True)[0]
+                global_stats = vk.get_stats(get_global=True)[0]
                 out_msg += (
                     "\nВ мире:\n"
-                    f"Новых случаев: {stats['total_new_cases_today']}\n"
-                    f"Смертей сегодня: {stats['total_new_deaths_today']}\n"
-                    f"Всего случаев: {stats['total_cases']}\n"
-                    f"Из них выздоровело: {stats['total_recovered']}\n"
-                    f"Всего смертей: {stats['total_deaths']}\n"
-                    f"Зараженных стран: {stats['total_affected_countries']}"
+                    f"Новых случаев: {global_stats['todayCases']}\n"
+                    f"Смертей сегодня: {global_stats['todayDeaths']}\n"
+                    f"Всего случаев: {global_stats['cases']}\n"
+                    f"Из них выздоровело: {global_stats['recovered']} ({round(global_stats['recovered']/(global_stats['cases']/100), 2)}%)\n"
+                    f"Всего смертей: {global_stats['deaths']} ({round(global_stats['deaths']/(global_stats['cases']/100), 2)}%)\n"
+                    f"Акитвных случаев: {global_stats['active']}\n"
+                    f"Зараженных стран: {global_stats['affectedCountries']}"
                 )
             if msg == 'начать':
                 out_msg = (
@@ -82,7 +85,6 @@ def messages_hander():
 def schedule_loop():
     while True:
         schedule.run_pending()
-        print('schedule')
         time.sleep(40)
 
 
