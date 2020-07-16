@@ -7,11 +7,12 @@ from vk_bot import VkBot, Api as api
 
 def make_post():
     try:
-        local_stats, global_stats = api.get_stats(local=True, world=True)
+        local_stats, global_stats = api.get_stats(local = True, world = True)
+        local_stats_yesterday, global_stats_yesterday = api.get_stats(local = True, world = True, yesterday = True)
         current_date = datetime.fromtimestamp(global_stats['updated']/1000).strftime('%d.%m.%Y %H:%M')
         message = f'Статистика по коронавирусу на {current_date}\nПишите в лс боту, чтобы получить последнюю статистику!n\n'
-        message += api.arrange_message(local_stats, 'В России:')
-        message += api.arrange_message(global_stats, 'В мире:')
+        message += api.arrange_message(local_stats, local_stats_yesterday, 'В России:')
+        message += api.arrange_message(global_stats, global_stats_yesterday, 'В мире:')
         vk.wall_post(message)
     except TypeError:
         time.sleep(900)
@@ -34,10 +35,12 @@ def messages_hander():
             out_msg = ""
             if msg in messages['ru'] or msg in messages['all']:
                 stats = api.get_stats(local = True)[0]
-                out_msg += api.arrange_message(stats, 'В России:')
+                stats_yesterday = api.get_stats(local = True, yesterday = True)[0]
+                out_msg += api.arrange_message(stats, stats_yesterday, 'В России:')
             if msg in messages['world'] or msg in messages['all']:
-                stats = api.get_stats(world=True)[0]
-                out_msg += api.arrange_message(stats, 'В мире:')
+                stats = api.get_stats(world = True)[0]
+                stats_yesterday = api.get_stats(world = True, yesterday = True)[0]
+                out_msg += api.arrange_message(stats, stats_yesterday, 'В мире:')
             if msg in messages['start'] or event.from_chat and msg == '':
                 out_msg = (
                     'Привет! Я бот - коронавирус. Я могу сообщать тебе последнюю статистику по коронавирусу.\n\n'
@@ -61,7 +64,7 @@ def schedule_loop():
 
 if __name__ == "__main__":
     with open('data.yaml', 'r') as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
+        data = yaml.load(f, Loader = yaml.FullLoader)
     vk = VkBot(data['user_token'], data['group_token'], data['group_id'])
     schedule.every().day.at('16:00').do(make_post)
     

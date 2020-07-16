@@ -7,7 +7,7 @@ class VkBot:
         self.group_id = group_id
         vk_session = VkApi(token = user_token, config_filename = '.vk_config.v2.json')
         self.vk = vk_session.get_api()
-        self.group_session = VkApi(token=group_token, config_filename = '.vk_config.v2.json')
+        self.group_session = VkApi(token = group_token, config_filename = '.vk_config.v2.json')
         self.group_vk = self.group_session.get_api()
 
     def wall_post(self, message):
@@ -25,30 +25,40 @@ class VkBot:
 
 class Api:
     @staticmethod
-    def get_stats(local = False, world = False) -> dict:
+    def get_stats(local = False, world = False, yesterday = False) -> dict:
+        out = []
+        yesterday = ('true' if yesterday else 'false')
         try:
-            out = []
-            if local: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/countries/Russia').text))
-            if world: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/all').text))
+            if local: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/countries/Russia', params={"yesterday": yesterday}).text))
+            if world: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/all', params={"yesterday": yesterday}).text))
             return out
         except json.JSONDecodeError:
             pass
 
     @staticmethod
-    def arrange_message(stats, header) -> str:
-        out_msg = ''
+    def arrange_message(stats, stats_yesterday, header) -> str:
+        out = f'\n{header}\n'
+        cases_diff = "{:+}".format(stats['todayCases'] - stats_yesterday['todayCases'])
+        deaths_diff = "{:+}".format(stats['todayDeaths'] - stats_yesterday['todayDeaths'])
+        recovered_diff = "{:+}".format(stats['todayRecovered'] - stats_yesterday['todayRecovered'])
+        active_diff = "{:+}".format(stats['active'] - stats_yesterday['active'])
         recovered_percent = round(stats['recovered']/(stats['cases']/100), 2)
         deaths_percent = round(stats['deaths']/(stats['cases']/100), 2)
-        return (
-            f"\n{header}\n"
-            f"Новых случаев: {stats['todayCases']}\n"
-            f"Смертей сегодня: {stats['todayDeaths']}\n"
-            f"Сегодня выздоровело: {stats['todayRecovered']}\n"
+        if stats['todayCases'] == 0:
+            out += 'На сегодня нет новой информации.\n'
+        else:
+            out += (
+                f"Новых случаев: {stats['todayCases']} ({cases_diff})\n"
+                f"Смертей сегодня: {stats['todayDeaths']} ({deaths_diff})\n"
+                f"Сегодня выздоровело: {stats['todayRecovered']} ({recovered_diff})\n"
+            )
+        out += (
             f"Всего случаев: {stats['cases']}\n"
             f"Из них выздоровело: {stats['recovered']} ({recovered_percent}%)\n"
             f"Всего смертей: {stats['deaths']} ({deaths_percent}%)\n"
-            f"Активных случаев: {stats['active']}\n"
+            f"Активных случаев: {stats['active']} ({active_diff})\n"
         )
+        return out
 
 
 if __name__ == "__main__":
