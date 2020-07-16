@@ -1,6 +1,7 @@
 import schedule
 import time
 import yaml
+import re
 from concurrent import futures
 from datetime import datetime
 from vk_bot import VkBot, Api as api
@@ -28,10 +29,8 @@ def messages_hander():
     while True:
         try:
             event = vk.messages_loop()
-            prefix = f'[club{data["group_id"]}|@{data["group_name"]}] '
-            msg = event.message.text.lower().strip(prefix)
+            msg = re.sub(fr'\[{data["group_id"]}|.*\](,|) ', '', event.message['text'].lower())
             peer_id = event.message.peer_id
-            if prefix not in event.message.text: prefix = ''
             out_msg = ""
             if msg in messages['ru'] or msg in messages['all']:
                 stats = api.get_stats(local = True)[0]
@@ -50,7 +49,7 @@ def messages_hander():
                     'все - Статистика России и мира в одном сообщении.\n'
                 )
             if out_msg != '': vk.send_message(peer_id, out_msg)
-            else: vk.send_message(peer_id, f'Извини, но я тебя не понимаю. Напиши "{prefix}помощь", чтобы получить список команд.')
+            else: vk.send_message(peer_id, 'Извини, но я тебя не понимаю. Напиши "помощь", чтобы получить список команд.')
         except TypeError:
             vk.send_message(peer_id, 'Произошла ошибка. Повторите попытку позднее.')
 
