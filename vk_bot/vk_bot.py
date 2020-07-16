@@ -3,9 +3,9 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 import json, requests
 
 class VkBot:
-    def __init__(self, token: str, group_token: str, group_id: int):
+    def __init__(self, user_token: str, group_token: str, group_id: int):
         self.group_id = group_id
-        vk_session = VkApi(token = token, config_filename = '.vk_config.v2.json')
+        vk_session = VkApi(token = user_token, config_filename = '.vk_config.v2.json')
         self.vk = vk_session.get_api()
         self.group_session = VkApi(token=group_token, config_filename = '.vk_config.v2.json')
         self.group_vk = self.group_session.get_api()

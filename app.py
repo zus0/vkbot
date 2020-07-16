@@ -1,7 +1,9 @@
-import schedule, time, concurrent.futures
+import schedule
+import time
+import yaml
+from concurrent import futures
 from datetime import datetime
 from vk_bot import VkBot, Api as api
-
 
 def make_post():
     try:
@@ -25,7 +27,7 @@ def messages_hander():
     while True:
         try:
             event = vk.messages_loop()
-            prefix = '[club***REMOVED***|@covid_stats] '
+            prefix = f'[club{data["group_id"]}|@{data["group_name"]}] '
             msg = event.message.text.lower().strip(prefix)
             peer_id = event.message.peer_id
             if prefix not in event.message.text: prefix = ''
@@ -58,9 +60,11 @@ def schedule_loop():
 
 
 if __name__ == "__main__":
-    vk = VkBot('***REMOVED***', '***REMOVED***', ***REMOVED***)
+    with open('data.yaml', 'r') as f:
+        data = yaml.load(f, Loader=yaml.FullLoader)
+    vk = VkBot(data['user_token'], data['group_token'], data['group_id'])
     schedule.every().day.at('16:00').do(make_post)
     
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with futures.ThreadPoolExecutor() as executor:
         t1 = executor.submit(schedule_loop)
         t2 = executor.submit(messages_hander)
