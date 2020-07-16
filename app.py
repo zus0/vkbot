@@ -1,32 +1,15 @@
 import schedule, time, concurrent.futures
 from datetime import datetime
-from vk_bot import VkBot
-# group_token = '***REMOVED***'
+from vk_bot import VkBot, Api as api
 
 
 def make_post():
     try:
-        local_stats, global_stats = vk.get_stats(get_global=True, get_local=True)
+        local_stats, global_stats = api.get_stats(local=True, world=True)
         current_date = datetime.fromtimestamp(global_stats['updated']/1000).strftime('%d.%m.%Y %H:%M')
-        message = (
-            f"Статистика по коронавирусу на {current_date}\n"
-            "\nВ России:\n"
-            f"Новых случаев: {local_stats['todayCases']}\n"
-            f"Смертей сегодня: {local_stats['todayDeaths']}\n"
-            f"Сегодня выздоровело: {local_stats['todayRecovered']}"
-            f"Всего случаев: {local_stats['cases']}\n"
-            f"Из них выздоровело: {local_stats['recovered']}\n"
-            f"Всего смертей: {local_stats['deaths']}\n"
-            f"Активных случаев: {local_stats['active']}\n"
-            "\nВ мире:\n"
-            f"Новых случаев: {global_stats['todayCases']}\n"
-            f"Смертей сегодня: {global_stats['todayDeaths']}\n"
-            f"Всего случаев: {global_stats['cases']}\n"
-            f"Из них выздоровело: {global_stats['recovered']} ({global_stats['recovered']/(global_stats['cases']/100)}%)\n"
-            f"Всего смертей: {global_stats['deaths']}\n"
-            f"Акитвных случаев: {global_stats['active']}"
-            f"Зараженных стран: {global_stats['affectedCountries']}"
-        )
+        message = f'Статистика по коронавирусу на {current_date}\nПишите в лс боту, чтобы получить последнюю статистику!n\n'
+        message += api.arrange_message(local_stats, 'В России:')
+        message += api.arrange_message(global_stats, 'В мире:')
         vk.wall_post(message)
     except TypeError:
         time.sleep(900)
@@ -36,39 +19,24 @@ def messages_hander():
     messages = {
         'ru': ['рф', "ру", "россия", "в россии", 'ru', 'russia'],
         'world': ['мир', "в мире", 'world', 'worldwide'],
-        'all': ['коронавирус', "коронавирус статистика", "covid", "все", "статистика"]
+        'all': ['коронавирус', "коронавирус статистика", "covid", "все", "статистика"],
+        'start': ['начать', "помощь"]
     }
     while True:
         try:
             event = vk.messages_loop()
-            msg = event.message.text.lower().strip('[club***REMOVED***|@covid_stats] ')
+            prefix = '[club***REMOVED***|@covid_stats] '
+            msg = event.message.text.lower().strip(prefix)
             peer_id = event.message.peer_id
+            if prefix not in event.message.text: prefix = ''
             out_msg = ""
             if msg in messages['ru'] or msg in messages['all']:
-                local_stats = vk.get_stats(get_local=True)[0]
-                out_msg += (
-                    "\nВ России:\n"
-                    f"Новых случаев: {local_stats['todayCases']}\n"
-                    f"Смертей сегодня: {local_stats['todayDeaths']}\n"
-                    f"Сегодня выздоровело: {local_stats['todayRecovered']}\n"
-                    f"Всего случаев: {local_stats['cases']}\n"
-                    f"Из них выздоровело: {local_stats['recovered']} ({round(local_stats['recovered']/(local_stats['cases']/100), 2)}%)\n"
-                    f"Всего смертей: {local_stats['deaths']} ({round(local_stats['deaths']/(local_stats['cases']/100), 2)}%)\n"
-                    f"Активных случаев: {local_stats['active']}\n"
-                )
+                stats = api.get_stats(local = True)[0]
+                out_msg += api.arrange_message(stats, 'В России:')
             if msg in messages['world'] or msg in messages['all']:
-                global_stats = vk.get_stats(get_global=True)[0]
-                out_msg += (
-                    "\nВ мире:\n"
-                    f"Новых случаев: {global_stats['todayCases']}\n"
-                    f"Смертей сегодня: {global_stats['todayDeaths']}\n"
-                    f"Всего случаев: {global_stats['cases']}\n"
-                    f"Из них выздоровело: {global_stats['recovered']} ({round(global_stats['recovered']/(global_stats['cases']/100), 2)}%)\n"
-                    f"Всего смертей: {global_stats['deaths']} ({round(global_stats['deaths']/(global_stats['cases']/100), 2)}%)\n"
-                    f"Акитвных случаев: {global_stats['active']}\n"
-                    f"Зараженных стран: {global_stats['affectedCountries']}"
-                )
-            if msg == 'начать':
+                stats = api.get_stats(world=True)[0]
+                out_msg += api.arrange_message(stats, 'В мире:')
+            if msg in messages['start'] or event.from_chat and msg == '':
                 out_msg = (
                     'Привет! Я бот - коронавирус. Я могу сообщать тебе последнюю статистику по коронавирусу.\n\n'
                     'Чтобы начать, просто напиши одну из трех комманд: \n'
@@ -77,7 +45,8 @@ def messages_hander():
                     'все - Статистика России и мира в одном сообщении.\n'
                 )
             if out_msg != '': vk.send_message(peer_id, out_msg)
-        except TypeError as ex:
+            else: vk.send_message(peer_id, f'Извини, но я тебя не понимаю. Напиши "{prefix}помощь", чтобы получить список команд.')
+        except TypeError:
             vk.send_message(peer_id, 'Произошла ошибка. Повторите попытку позднее.')
 
 

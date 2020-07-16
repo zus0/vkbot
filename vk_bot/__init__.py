@@ -1,4 +1,4 @@
-from .vk_bot import VkBot
+from .vk_bot import VkBot, Api
 
 __version__ = '1.0.0'
 __author__ = 'Zus0'
