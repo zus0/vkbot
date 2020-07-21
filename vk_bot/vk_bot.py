@@ -1,6 +1,9 @@
 from vk_api import VkApi
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-import json, requests
+from datetime import datetime
+import json
+import requests
+import logging
 
 class VkBot:
     def __init__(self, user_token: str, group_token: str, group_id: int):
@@ -9,31 +12,38 @@ class VkBot:
         self.vk = vk_session.get_api()
         self.group_session = VkApi(token = group_token, config_filename = '.vk_config.v2.json')
         self.group_vk = self.group_session.get_api()
+        self.longpoll = VkBotLongPoll(self.group_session, self.group_id)
 
     def wall_post(self, message):
         post_id = self.vk.wall.post(owner_id = -self.group_id, message = message, from_group = True)['post_id']
         self.vk.wall.pin(owner_id = -self.group_id, post_id = post_id)
+        logging.info("Wall post at %s with id of %s", datetime.now().strftime('%d.%m.%Y %H:%M'), post_id)
 
     def send_message(self, peer_id, message):
         self.group_vk.messages.send(peer_id = peer_id, message = message, random_id = 0)
     
-    def messages_loop(self):
-        longpoll = VkBotLongPoll(self.group_session, self.group_id)
-        for event in longpoll.listen():
-            if event.type == VkBotEventType.MESSAGE_NEW:
-                return event
+    def get_event(self):
+        while True:
+            try:
+                for event in self.longpoll.listen():
+                    logging.info("Got event at %s", datetime.now().strftime('%d.%m.%Y %H:%M'))
+                    if event.type == VkBotEventType.MESSAGE_NEW:
+                        return event
+            except requests.ReadTimeout:
+                logging.warning('Request timeout in longpoll.listen()')
 
 class Api:
     @staticmethod
-    def get_stats(local = False, world = False, yesterday = False) -> dict:
+    def get_stats(local = False, world = False, yesterday = False) -> list:
         out = []
         yesterday = ('true' if yesterday else 'false')
         try:
             if local: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/countries/Russia', params={"yesterday": yesterday}).text))
             if world: out.append(json.loads(requests.get('https://disease.sh/v3/covid-19/all', params={"yesterday": yesterday}).text))
-            return out
         except json.JSONDecodeError:
-            pass
+            logging.warning('Unable to decode API data')
+        logging.debug(out)
+        return out
 
     @staticmethod
     def arrange_message(stats, stats_yesterday, header) -> str:
@@ -58,6 +68,7 @@ class Api:
             f"Всего смертей: {stats['deaths']} ({deaths_percent}%)\n"
             f"Активных случаев: {stats['active']} ({active_diff})\n"
         )
+        logging.debug(out)
         return out
 
 

@@ -3,5 +3,6 @@
         "run.sh": true,
         "token.txt": true
     },
-    "git.enableCommitSigning": false
+    "git.enableCommitSigning": false,
+    "python.linting.pylintArgs": ["--disable", "C,unbalanced-tuple-unpacking,fixme"]
 }
