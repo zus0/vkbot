@@ -1,4 +1,4 @@
-from vk_api import VkApi
+from vk_api import VkApi, keyboard
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from datetime import datetime
 import json
@@ -13,6 +13,8 @@ class VkBot:
         self.group_session = VkApi(token = group_token, config_filename = '.vk_config.v2.json')
         self.group_vk = self.group_session.get_api()
         self.longpoll = VkBotLongPoll(self.group_session, self.group_id)
+        self.kb = keyboard.VkKeyboard()
+        for option in ["Россия 🇷🇺", "Мир 🌎", "Все 📊"]: self.kb.add_button(option, color='primary')
 
     def wall_post(self, message):
         post_id = self.vk.wall.post(owner_id = -self.group_id, message = message, from_group = True)['post_id']
@@ -20,7 +22,8 @@ class VkBot:
         logging.info("Wall post at %s with id of %s", datetime.now().strftime('%d.%m.%Y %H:%M'), post_id)
 
     def send_message(self, peer_id, message):
-        self.group_vk.messages.send(peer_id = peer_id, message = message, random_id = 0)
+        kb = (self.kb.get_keyboard() if peer_id < 2000000000 else None)
+        self.group_vk.messages.send(peer_id = peer_id, message = message, random_id = 0, keyboard = kb)
     
     def get_event(self):
         while True:

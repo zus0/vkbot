@@ -27,16 +27,16 @@ def make_post():
 
 def messages_hander():
     messages = {
-        'ru': ['рф', "ру", "россия", "в россии", 'ru', 'russia'],
+        'ru': ['рф', "ру", "россия", 'ru', 'russia'],
         'world': ['мир', "в мире", 'world', 'worldwide'],
-        'all': ['коронавирус', "коронавирус статистика", "covid", "все", "статистика"],
+        'all': ['коронавирус', "covid", "все", "статистика"],
         'start': ['начать', "помощь"]
     }
-    # TODO Buttons
     while True:
         try:
             event = vk.get_event()
-            msg = re.sub(fr'\[{data["group_id"]}|.*\](,|) ', '', event.message['text'].lower())
+            msg = re.sub(fr'\[{data["group_id"]}|.*\](,|) ', '', event.message['text'].lower()) # remove @ from message
+            msg = msg.encode('cp1251', 'ignore').decode('cp1251').strip(' ') # remove all emojis and strip the space
             peer_id = event.message.peer_id
             out_msg = ""
             if msg in messages['ru'] or msg in messages['all']:
