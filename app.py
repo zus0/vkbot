@@ -7,8 +7,9 @@ from concurrent import futures
 from datetime import datetime
 from vk_bot import VkBot, Api as api
 
-def initialize_logging():
-    logging.basicConfig(filename='bot.log', level = logging.INFO)
+def initialize_logging(filename):
+    open(filename, 'w') # clean the file
+    logging.basicConfig(filename=filename, level = logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
     logging.info('Started!')
 
 def make_post():
@@ -65,13 +66,13 @@ def messages_hander():
 
 def schedule_loop():
     while True:
-        logging.info("Schedule at %s", datetime.now().strftime('%d.%m.%Y %H:%M'))
+        logging.debug("Schedule loop")
         schedule.run_pending()
         time.sleep(60)
 
 
 if __name__ == "__main__":
-    initialize_logging()
+    initialize_logging('bot.log')
     with open('data.yaml', 'r') as f:
         data = yaml.load(f, Loader = yaml.FullLoader)
     vk = VkBot(data['user_token'], data['group_token'], data['group_id'])

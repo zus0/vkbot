@@ -1,8 +1,13 @@
 {
     "files.exclude": {
         "run.sh": true,
-        "token.txt": true
+        "token.txt": true,
+        "bot.log": false,
+        "data.yaml": true
     },
     "git.enableCommitSigning": false,
-    "python.linting.pylintArgs": ["--disable", "C,unbalanced-tuple-unpacking,fixme"]
+    "python.linting.pylintArgs": [
+        "--disable",
+        "C,unbalanced-tuple-unpacking,fixme"
+    ]
 }

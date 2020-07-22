@@ -1,6 +1,5 @@
 from vk_api import VkApi, keyboard
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from datetime import datetime
 import json
 import requests
 import logging
@@ -19,7 +18,7 @@ class VkBot:
     def wall_post(self, message):
         post_id = self.vk.wall.post(owner_id = -self.group_id, message = message, from_group = True)['post_id']
         self.vk.wall.pin(owner_id = -self.group_id, post_id = post_id)
-        logging.info("Wall post at %s with id of %s", datetime.now().strftime('%d.%m.%Y %H:%M'), post_id)
+        logging.info("Wall post with id of %s", post_id)
 
     def send_message(self, peer_id, message):
         kb = (self.kb.get_keyboard() if peer_id < 2000000000 else None)
@@ -29,7 +28,7 @@ class VkBot:
         while True:
             try:
                 for event in self.longpoll.listen():
-                    logging.info("Got event at %s", datetime.now().strftime('%d.%m.%Y %H:%M'))
+                    logging.debug("Got event with type %s", event.type)
                     if event.type == VkBotEventType.MESSAGE_NEW:
                         return event
             except requests.ReadTimeout:
