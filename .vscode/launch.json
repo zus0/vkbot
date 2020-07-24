@@ -5,7 +5,8 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/app.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["--log=DEBUG"]
         },
         {
             "name": "Current File",
