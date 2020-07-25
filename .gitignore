@@ -1,7 +1,7 @@
 # Custom
 token.txt
 test.py
-data.yaml
+settings.yaml
 
 # this is just to hide the red thing around file
 old_*

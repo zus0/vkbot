@@ -7,14 +7,19 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 
 class VkBot:
     def __init__(self, user_token: str, group_token: str, group_id: int):
+        self.log = logging.getLogger('bot.vk_bot')
+        self.group_id = group_id
+
         vk_session = VkApi(token = user_token, config_filename = '.vk_config.v2.json')
         group_session = VkApi(token = group_token, config_filename = '.vk_config.v2.json')
 
-        self.group_id = group_id
+        self.log.info('Authentication...')
         self.vk = vk_session.get_api()
+        self.log.info('User authenticated!')
         self.group_vk = group_session.get_api()
+        self.log.info('Group authenticated!')
         self.longpoll = VkBotLongPoll(group_session, self.group_id)
-        self.log = logging.getLogger('vk.vk_bot')
+        self.log.info('Got longpoll')
 
         self.kb = keyboard.VkKeyboard()
         for option in ["Россия 🇷🇺", "Мир 🌎", "Все 📊"]: self.kb.add_button(option, color='primary')
@@ -27,7 +32,7 @@ class VkBot:
     def send_message(self, peer_id, message):
         kb = (self.kb.get_keyboard() if peer_id < 2000000000 else None)
         message_id = self.group_vk.messages.send(peer_id = peer_id, message = message, random_id = 0, keyboard = kb)
-        self.log.info("Sent message with id %s", message_id)
+        self.log.info("Sent message with id %s to %s", message_id, peer_id)
     
     def get_event(self):
         while True:
