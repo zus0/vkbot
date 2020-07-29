@@ -72,7 +72,6 @@ class Api:
         cases_diff = "{:+}".format(stats['todayCases'] - stats_yesterday['todayCases'])
         deaths_diff = "{:+}".format(stats['todayDeaths'] - stats_yesterday['todayDeaths'])
         recovered_diff = "{:+}".format(stats['todayRecovered'] - stats_yesterday['todayRecovered'])
-        active_diff = "{:+}".format(stats['active'] - stats_yesterday['active'])
 
         out = f'\nСтатистика {header} на {current_date}:\n'
 
@@ -89,7 +88,7 @@ class Api:
             f"Всего случаев: {stats['cases']}\n"
             f"Из них выздоровело: {stats['recovered']} ({recovered_percent}%)\n"
             f"Всего смертей: {stats['deaths']} ({deaths_percent}%)\n"
-            f"Активных случаев: {stats['active']} ({active_diff})\n"
+            f"Активных случаев: {stats['active']}\n"
         )
 
         cls.log.debug(out)
