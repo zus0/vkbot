@@ -1,9 +1,32 @@
 import json
 import logging
 import requests
-from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+import datetime
 from vk_api import VkApi, keyboard
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+
+def cache_decorator(func):
+    def wrapper(*args, **kwargs):
+        renew = False
+        try: open('.cache')
+        except FileNotFoundError: open('.cache', 'w'); renew = True
+
+        with open('.cache') as cache_file:
+            data = json.load(cache_file)
+            next_update = datetime.datetime.fromtimestamp(data['today'][1]['updated']/1000) + datetime.timedelta(minutes=20)
+            if next_update > datetime.datetime.now():
+                kwargs['data'] = data
+                return func(*args, **kwargs)
+            else:
+                renew = True
+
+        if renew:
+            data = func(*args, **kwargs)
+            with open('.cache', 'w') as cache_file:
+                cache_file.write(json.dumps(data))
+            return data
+    return wrapper
 
 class VkBot:
     def __init__(self, user_token: str, group_token: str, group_id: int):
@@ -31,8 +54,8 @@ class VkBot:
 
     def send_message(self, peer_id, message):
         kb = (self.kb.get_keyboard() if peer_id < 2000000000 else None)
-        message_id = self.group_vk.messages.send(peer_id = peer_id, message = message, random_id = 0, keyboard = kb)
-        self.log.info("Sent message with id %s to %s", message_id, peer_id)
+        message_id = self.group_vk.messages.send(peer_id = peer_id, message = message.get(), random_id = 0, keyboard = kb)
+        self.log.info('Sent message with id %s to %s, with type "%s"', message_id, peer_id, message.get_type())
     
     def get_event(self):
         while True:
@@ -52,22 +75,29 @@ class Api:
     log = logging.getLogger('vk.Api')
 
     @classmethod
-    def get_stats(cls, local = False, world = False, yesterday = False) -> dict:
-        out = [[], []]
-        yesterday = ('true' if yesterday else 'false')
+    @cache_decorator
+    def get_stats(cls, data = None) -> dict:
+        def get_data(url, yesterday):
+            return json.loads(requests.get(url, params={"yesterday": yesterday}).text)
+
         try:
-            if local: out[0] = json.loads(requests.get('https://disease.sh/v3/covid-19/countries/Russia', params={"yesterday": yesterday}).text)
-            if world: out[1] = json.loads(requests.get('https://disease.sh/v3/covid-19/all', params={"yesterday": yesterday}).text)
+            if data == None:
+                data = {'today': [[], []], 'yesterday': [[], []]}
+                with ThreadPoolExecutor() as pool:
+                    data['today'][0] = pool.submit(get_data, 'https://disease.sh/v3/covid-19/countries/Russia', 'false').result()
+                    data['today'][1] = pool.submit(get_data, 'https://disease.sh/v3/covid-19/all', 'false').result()
+                    data['yesterday'][0] = pool.submit(get_data, 'https://disease.sh/v3/covid-19/countries/Russia', 'true').result()
+                    data['yesterday'][1] = pool.submit(get_data, 'https://disease.sh/v3/covid-19/all', 'true').result()
         except json.JSONDecodeError:
             cls.log.warning('Unable to decode API data')
-        cls.log.debug(out)
-        return out
+        cls.log.debug(data)
+        return data
 
     @classmethod
     def arrange_message(cls, stats, stats_yesterday, header) -> str:
         deaths_percent = round(stats['deaths']/(stats['cases']/100), 2)
         recovered_percent = round(stats['recovered']/(stats['cases']/100), 2)
-        current_date = datetime.fromtimestamp(stats['updated']/1000).strftime('%d.%m.%Y %H:%M')
+        current_date = datetime.datetime.fromtimestamp(stats['updated']/1000).strftime('%d.%m.%Y %H:%M')
 
         cases_diff = "{:+}".format(stats['todayCases'] - stats_yesterday['todayCases'])
         deaths_diff = "{:+}".format(stats['todayDeaths'] - stats_yesterday['todayDeaths'])

@@ -58,8 +58,8 @@ class VK:
     def make_post(self):
         try:
             self.log.info("Making a post...")
-            local, world = api.get_stats(local = True, world = True)
-            local_yesterday, global_yesterday = api.get_stats(local = True, world = True, yesterday = True)
+            local, world = api.get_stats()
+            local_yesterday, global_yesterday = api.get_stats()
             self.log.info('Got stats for post')
 
             message = Message('Пишите в лс боту, чтобы получить последнюю статистику!\n', 'post')
@@ -79,33 +79,29 @@ class VK:
             'all': ['коронавирус', "covid", "все", "статистика"],
             'start': ['начать', "помощь"]
         }
-
-        while True:
+        def send_message(event):
             try:
-                event = self.bot.get_event()
                 self.log.info('Got event with type %s', event.type)
                 msg = re.sub(fr'\[{self.group_id}|.*\](,|) ', '', event.message['text'].lower())
                 msg = msg.encode('cp1251', 'ignore').decode('cp1251').strip(' ')
                 peer_id = event.message.peer_id
                 self.log.info('Event message is "%s", peer id is %s', msg, peer_id)
                 out_msg = Message('', 'info')
+                stats = api.get_stats()['today']
+                stats_yesterday = api.get_stats()['yesterday']
 
                 if msg in messages['ru'] or msg in messages['all']:
                     self.log.info('Getting local stats for message...')
-                    stats = api.get_stats(local = True)[0]
-                    stats_yesterday = api.get_stats(local = True, yesterday = True)[0]
                     self.log.info('Got local stats!')
-                    out_msg.append(api.arrange_message(stats, stats_yesterday, 'в России'))
+                    out_msg.append(api.arrange_message(stats[0], stats_yesterday[0], 'в России'))
 
                 if msg in messages['world'] or msg in messages['all']:
                     self.log.info('Getting global stats for message...')
-                    stats = api.get_stats(world = True)[1]
-                    stats_yesterday = api.get_stats(world = True, yesterday = True)[1]
                     self.log.info('Got global stats!')
-                    out_msg.append(api.arrange_message(stats, stats_yesterday, 'в мире'))
+                    out_msg.append(api.arrange_message(stats[1], stats_yesterday[1], 'в мире'))
 
                 if msg in messages['start'] or event.from_chat and msg == '':
-                    out_msg.set_type('start')
+                    out_msg.set_type('start') # TODO статистика в разных странах
                     out_msg.change((
                         'Привет! Я бот - коронавирус. Я могу сообщать тебе последнюю статистику по коронавирусу.\n\n'
                         'Чтобы начать, просто напиши одну из трех комманд: \n'
@@ -114,14 +110,24 @@ class VK:
                         'все - Статистика России и мира в одном сообщении.\n'
                     ))
 
-                if out_msg.get() != '': self.bot.send_message(peer_id, out_msg.get())
+                if out_msg.get() != '': self.bot.send_message(peer_id, out_msg)
                 else: 
                     out_msg.change('Извини, но я тебя не понимаю. Напиши "помощь", чтобы получить список команд.')
                     out_msg.set_type('empty')
-                    self.bot.send_message(peer_id, out_msg.get())
+                    self.bot.send_message(peer_id, out_msg)
             except TypeError:
                 self.log.warning('Got TypeError in messages_handler()')
                 self.bot.send_message(peer_id, 'Произошла ошибка. Повторите попытку позднее.')
+            except:
+                self.log.exception('')
+                raise
+
+        while True:
+            try:
+                event = self.bot.get_event()
+                send_message(event)
+            except TypeError:
+                self.log.warning('Got TypeError in messages_handler()')
             except:
                 self.log.exception('')
                 raise

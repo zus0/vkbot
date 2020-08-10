@@ -2,12 +2,9 @@
     "files.exclude": {
         "run.sh": true,
         "token.txt": true,
-        "bot.log": false,
-        "settings.yaml": true
+        "settings.yaml": true,
+        ".cache": true
     },
     "git.enableCommitSigning": false,
-    "python.linting.pylintArgs": [
-        "--disable",
-        "C,fixme,bare-except"
-    ]
+    "python.pythonPath": ".venv/bin/python"
 }
