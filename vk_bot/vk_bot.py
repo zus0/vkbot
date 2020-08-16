@@ -6,6 +6,7 @@ import datetime
 from vk_api import VkApi, keyboard
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 
+module_logger = logging.getLogger('bot.vk_bot')
 def cache_decorator(func):
     def wrapper(*args, **kwargs):
         renew = False
@@ -30,7 +31,7 @@ def cache_decorator(func):
 
 class VkBot:
     def __init__(self, user_token: str, group_token: str, group_id: int):
-        self.log = logging.getLogger('bot.vk_bot')
+        self.log = logging.getLogger('bot.vk_bot.VkBot')
         self.group_id = group_id
 
         vk_session = VkApi(token = user_token, config_filename = '.vk_config.v2.json')
@@ -72,7 +73,9 @@ class VkBot:
                 self.log.exception('Exception in longpoll.listen()')
 
 class Api:
-    log = logging.getLogger('vk.Api')
+    @classmethod
+    def get_logger(cls):
+        cls.log = logging.getLogger('bot.vk_bot.Api')
 
     @classmethod
     @cache_decorator

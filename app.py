@@ -58,8 +58,9 @@ class VK:
     def make_post(self):
         try:
             self.log.info("Making a post...")
-            local, world = api.get_stats()
-            local_yesterday, global_yesterday = api.get_stats()
+            stats = api.get_stats()
+            local, world = stats['today']
+            local_yesterday, global_yesterday = stats['yesterday']
             self.log.info('Got stats for post')
 
             message = Message('Пишите в лс боту, чтобы получить последнюю статистику!\n', 'post')
@@ -160,6 +161,8 @@ def main():
 
     data.update(get_arguments())
     vk = VK(data)
+    api.get_logger()
+    
     schedule.every().day.at('16:00').do(vk.make_post)
 
     with futures.ThreadPoolExecutor() as executor:
